@@ -7,16 +7,16 @@ publish {
     artifactId = 'timebarview'
     publishVersion = '1.9'
     desc = 'TimebarView'
-    website = 'https://github.com/dingyongxiang/TimeRulers'
+    website = 'https://github.com/jdpxiaoming/TimeRulers'
 }
 /*7e151f52046e3813f7b318b7d6baf3f34976e864*/
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.3"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.3"
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName version
 
@@ -36,5 +36,5 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    api fileTree(include: ['*.jar'], dir: 'libs')
 }
