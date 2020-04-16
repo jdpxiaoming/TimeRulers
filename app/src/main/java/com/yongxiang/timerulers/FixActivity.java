@@ -1,11 +1,10 @@
 package com.yongxiang.timerulers;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,14 +13,18 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import timerulers.yongxiang.com.timerulerslib.views.FixedTimebarView;
 import timerulers.yongxiang.com.timerulerslib.views.RecordDataExistTimeSegment;
 import timerulers.yongxiang.com.timerulerslib.views.TimebarView;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    private String TAG = MainActivity.class.getSimpleName();
+/**
+ * 固定标尺，两头拖动1.5分钟. 90s.
+ */
+public class FixActivity extends AppCompatActivity implements View.OnClickListener {
+    private String TAG = FixActivity.class.getSimpleName();
     private TextView currentTimeTextView;
     private Button zoomInButton, zoomOutButton;
-    private TimebarView mTimebarView;
+    private FixedTimebarView mTimebarView;
 
     private Button mDayBt;
     private Button mHourBt;
@@ -37,13 +40,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private SimpleDateFormat zeroTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_fixed);
 
-        mTimebarView = (TimebarView) findViewById(R.id.my_timebar_view);
+        mTimebarView = (FixedTimebarView) findViewById(R.id.my_timebar_view);
         currentTimeTextView = (TextView) findViewById(R.id.current_time_tv);
         zoomInButton = (Button) findViewById(R.id.timebar_zoom_in_btn);
         zoomOutButton = (Button) findViewById(R.id.timebar_zoom_out_btn);
@@ -60,26 +62,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mMinuteBt3.setOnClickListener(this);
 
         calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+//        calendar.set(Calendar.HOUR_OF_DAY, 0);
+//        calendar.set(Calendar.MINUTE, 0);
+//        calendar.set(Calendar.SECOND, 0);
+        calendar.add(Calendar.SECOND,-90);
         //long timebarLeftEndPointTime = currentRealDateTime - 7 * 24 * 3600 * 1000;
-        //一天的开始时间.
+        //当前时间向前1.5分钟.
         long timebarLeftEndPointTime = calendar.getTimeInMillis();
 
         System.out.println("calendar:" + calendar.getTime() + "  currentRealDateTime:" + currentRealDateTime);
         calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.add(Calendar.DAY_OF_MONTH, 1);
+//        calendar.set(Calendar.HOUR_OF_DAY, 0);
+//        calendar.set(Calendar.MINUTE, 0);
+//        calendar.set(Calendar.SECOND, 0);
+//        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        calendar.add(Calendar.SECOND,90);
         //一天的结束时间（第二天的开始时间.）
+        //当前时间向后90s.
         long timebarRightEndPointTime = calendar.getTimeInMillis();
         //long timebarRightEndPointTime = currentRealDateTime + 3 * 3600 * 1000;
 
         mTimebarView.initTimebarLengthAndPosition(timebarLeftEndPointTime,
                 timebarRightEndPointTime - 1000, currentRealDateTime);
-
 
         final List<RecordDataExistTimeSegment> recordDataList = new ArrayList<>();
 //        recordDataList.add(new RecordDataExistTimeSegment(timebarLeftEndPointTime - ONE_HOUR_IN_MS * 1, timebarLeftEndPointTime + ONE_HOUR_IN_MS * 3));
@@ -88,8 +92,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        recordDataList.add(new RecordDataExistTimeSegment(timebarLeftEndPointTime + ONE_HOUR_IN_MS * 20, timebarRightEndPointTime));
         //记录当前前后1.5分钟的时间.
         RecordDataExistTimeSegment currentSegment = new RecordDataExistTimeSegment(
-                currentRealDateTime - ONE_MINUTE_IN_MS*2/3,
-                currentRealDateTime + ONE_MINUTE_IN_MS*2/3
+                currentRealDateTime - ONE_MINUTE_IN_MS/4,//前15s
+                currentRealDateTime + ONE_MINUTE_IN_MS/12//后5s
                 );
         recordDataList.add(currentSegment);
 
@@ -99,11 +103,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mTimebarView.checkVideo(true);
         mTimebarView.setDrag(false);
 
-        mTimebarView.setOnBarMoveListener(new TimebarView.OnBarMoveListener() {
+        mTimebarView.setOnBarMoveListener(new FixedTimebarView.OnBarMoveListener() {
             @Override
             public void onBarMove(long screenLeftTime, long screenRightTime, long currentTime) {
                 if (currentTime == -1) {
-                    Toast.makeText(MainActivity.this, "当前时刻没有录像", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FixActivity.this, "当前时刻没有录像", Toast.LENGTH_SHORT).show();
                 }
                 currentTimeTextView.setText(zeroTimeFormat.format(currentTime));
             }
@@ -114,7 +118,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
 
-        mTimebarView.setOnBarScaledListener(new TimebarView.OnBarScaledListener() {
+        mTimebarView.setOnBarScaledListener(new FixedTimebarView.OnBarScaledListener() {
             @Override
             public void onOnBarScaledMode(int mode) {
                 Log.d(TAG, "onOnBarScaledMode()" + mode);
@@ -131,7 +135,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.d(TAG, "onBarScaleFinish()");
             }
         });
-
     }
 
     @Override

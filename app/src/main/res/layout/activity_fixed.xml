@@ -86,7 +86,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true">
 
-        <timerulers.yongxiang.com.timerulerslib.views.TimebarView
+        <timerulers.yongxiang.com.timerulerslib.views.FixedTimebarView
             android:id="@+id/my_timebar_view"
             android:layout_width="match_parent"
             android:layout_height="100dp"

@@ -16,7 +16,9 @@ public class RecordDataExistTimeSegment {
     private long startTimeInMillisecond;
 
     private long endTimeInMillisecond;
-
+    /**
+     * 跨天数据 .
+     */
     private List<Long> coverDateZeroOClockList = new ArrayList<>();
 
     public RecordDataExistTimeSegment(long startTimeInMillisecond, long endTimeInMillisecond) {
