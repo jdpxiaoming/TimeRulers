@@ -27,7 +27,6 @@ public class FixActivity extends AppCompatActivity implements View.OnClickListen
     private Button mHourBt;
     private Button mMinuteBt;
     private Button mMinuteBt3; //限定三分钟内范围可选.
-    private TextView mStartTv,mEndTv,mCurrentTv;
 
     private int recordDays = 7;
     private long currentRealDateTime = System.currentTimeMillis();
@@ -53,9 +52,6 @@ public class FixActivity extends AppCompatActivity implements View.OnClickListen
         mHourBt = (Button) findViewById(R.id.hour);
         mMinuteBt = (Button) findViewById(R.id.minute);
         mMinuteBt3 = (Button) findViewById(R.id.minute3);
-        mStartTv = (TextView) findViewById(R.id.tv_start_time);
-        mCurrentTv = (TextView) findViewById(R.id.tv_current_time);
-        mEndTv = (TextView) findViewById(R.id.tv_end_time);
 
         zoomInButton.setOnClickListener(this);
         zoomOutButton.setOnClickListener(this);
@@ -65,11 +61,7 @@ public class FixActivity extends AppCompatActivity implements View.OnClickListen
         mMinuteBt3.setOnClickListener(this);
 
         calendar = Calendar.getInstance();
-//        calendar.set(Calendar.HOUR_OF_DAY, 0);
-//        calendar.set(Calendar.MINUTE, 0);
-//        calendar.set(Calendar.SECOND, 0);
         calendar.add(Calendar.SECOND,-90);
-        //long timebarLeftEndPointTime = currentRealDateTime - 7 * 24 * 3600 * 1000;
         //当前时间向前1.5分钟.
         long timebarLeftEndPointTime = calendar.getTimeInMillis();
 
@@ -79,7 +71,6 @@ public class FixActivity extends AppCompatActivity implements View.OnClickListen
         //一天的结束时间（第二天的开始时间.）
         //当前时间向后90s.
         long timebarRightEndPointTime = calendar.getTimeInMillis();
-        //long timebarRightEndPointTime = currentRealDateTime + 3 * 3600 * 1000;
 
         mTimebarView.initTimebarLengthAndPosition(timebarLeftEndPointTime,
                 timebarRightEndPointTime - 1000, currentRealDateTime);
@@ -101,40 +92,13 @@ public class FixActivity extends AppCompatActivity implements View.OnClickListen
                     Toast.makeText(FixActivity.this, "当前时刻没有录像", Toast.LENGTH_SHORT).show();
                 }
                 currentTimeTextView.setText(zeroTimeFormat.format(currentTime));
-                mStartTv.setText(todayTimeFormat.format(screenLeftTime));
-                mCurrentTv.setText(todayTimeFormat.format(currentTime));
-                mEndTv.setText(todayTimeFormat.format(screenRightTime));
             }
 
             @Override
             public void OnBarMoveFinish(long screenLeftTime, long screenRightTime, long currentTime) {
                 currentTimeTextView.setText(zeroTimeFormat.format(currentTime));
-                mStartTv.setText(todayTimeFormat.format(screenLeftTime));
-                mCurrentTv.setText(todayTimeFormat.format(currentTime));
-                mEndTv.setText(todayTimeFormat.format(screenRightTime));
             }
         });
-
-//        mTimebarView.setOnBarScaledListener(new FixedTimebarView.OnBarScaledListener() {
-//            @Override
-//            public void onOnBarScaledMode(int mode) {
-//                Log.d(TAG, "onOnBarScaledMode()" + mode);
-//            }
-//
-//            @Override
-//            public void onBarScaled(long screenLeftTime, long screenRightTime, long currentTime) {
-//                currentTimeTextView.setText(zeroTimeFormat.format(currentTime));
-//                mStartTv.setText(todayTimeFormat.format(screenLeftTime));
-//                mCurrentTv.setText(todayTimeFormat.format(currentTime));
-//                mEndTv.setText(todayTimeFormat.format(screenRightTime));
-//                Log.d(TAG, "onBarScaled()");
-//            }
-//
-//            @Override
-//            public void onBarScaleFinish(long screenLeftTime, long screenRightTime, long currentTime) {
-//                Log.d(TAG, "onBarScaleFinish()");
-//            }
-//        });
     }
 
     @Override

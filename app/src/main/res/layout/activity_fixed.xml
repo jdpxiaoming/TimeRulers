@@ -86,37 +86,10 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true">
 
-        <TextView
-            android:id="@+id/tv_start_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            tools:text="13:42:48"
-            android:layout_marginLeft="20dp"
-            android:textSize="12sp"
-            />
-        <TextView
-            android:id="@+id/tv_current_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            tools:text="13:42:48"
-            android:layout_centerHorizontal="true"
-            android:textSize="12sp"
-            />
-        <TextView
-            android:id="@+id/tv_end_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            tools:text="13:42:48"
-            android:layout_marginRight="20dp"
-            android:textSize="12sp"
-            />
-
         <timerulers.yongxiang.com.timerulerslib.views.FixedTimebarView
             android:id="@+id/my_timebar_view"
             android:layout_width="match_parent"
             android:layout_height="100dp"
-            android:layout_below="@id/tv_current_time"
             android:layout_gravity="bottom"
             android:layout_marginBottom="10dp"
             android:background="#ffffff" />

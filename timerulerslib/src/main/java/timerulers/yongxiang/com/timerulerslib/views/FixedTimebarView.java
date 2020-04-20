@@ -1,4 +1,3 @@
-
 package timerulers.yongxiang.com.timerulerslib.views;
 
 import android.content.Context;
@@ -22,6 +21,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import timerulers.yongxiang.com.timerulerslib.R;
 
 /**
@@ -30,6 +30,8 @@ import timerulers.yongxiang.com.timerulerslib.R;
  */
 public class FixedTimebarView extends View {
     private static final String TAG = "FixedTimebarView";
+
+    private static long ONE_MINUTE_IN_MS = 60 * 1000;//一分钟
     /**
      * 每秒钟占用的像素.-0.0125 = 0-1080/86400 .
      */
@@ -41,11 +43,15 @@ public class FixedTimebarView extends View {
 
     private int linesColor = Color.BLACK;
 
-    private int recordBackgroundColor = Color.argb(200, 251, 180, 76);
+    private int recordBackgroundColor = Color.argb(200, 255, 221, 178);
 
     private int textColor = Color.BLACK;
+    /**
+     * 当前时间的颜色.
+     */
+    private int middleCursorColor = Color.argb(200, 255, 164, 159);
 
-    private int middleCursorColor = Color.RED;
+    private int sideCursorColor = Color.argb(255, 254, 68, 57);
 
     private Paint timebarPaint = new Paint();
 
@@ -185,7 +191,6 @@ public class FixedTimebarView extends View {
      */
     private long WHOLE_TIMEBAR_TOTAL_SECONDS;
 
-    private Path path;
 
     private Calendar calendar;
 
@@ -194,13 +199,13 @@ public class FixedTimebarView extends View {
 
 
     /*
-    * 设置最大最小缩放级别
-    *  0:精度为秒
-    *  1:精度为一分钟
-    *  2：精度为6分钟
-    *  3:精度为30分钟
-    *  4:精度为2小时
-    */
+     * 设置最大最小缩放级别
+     *  0:精度为秒
+     *  1:精度为一分钟
+     *  2：精度为6分钟
+     *  3:精度为30分钟
+     *  4:精度为2小时
+     */
     private int ZOOMMAX = 3;
     private int ZOOMMIN = 1;
 
@@ -234,6 +239,7 @@ public class FixedTimebarView extends View {
 
     /**
      * 设置录播范围.
+     *
      * @param recordDataExistTimeClipsList
      */
     public void setRecordDataExistTimeClipsList(List<RecordDataExistTimeSegment> recordDataExistTimeClipsList) {
@@ -253,24 +259,13 @@ public class FixedTimebarView extends View {
         return mostLeftTimeInMillisecond;
     }
 
-
     public long getMostRightTimeInMillisecond() {
         return mostRightTimeInMillisecond;
     }
 
-//    public long getScreenLeftTimeInMillisecond() {
-//        screenLeftTimeInMillisecond = (long) (getCurrentTimeInMillisecond() - (long) ((float) screenWidth * 1000f / 2f / pixelsPerSecond));
-//
-//        return screenLeftTimeInMillisecond;
-//    }
-
-//    public long getScreenRightTimeInMillisecond() {
-//        screenRightTimeInMillisecond = (long) (getCurrentTimeInMillisecond() + (long) (screenWidth * 1000f / 2f / pixelsPerSecond));
-//        return screenRightTimeInMillisecond;
-//    }
-
     /**
      * 缓存当前绘制的数据 .
+     *
      * @param clipsList
      */
     private void arrangeRecordDataExistTimeClipsIntoMap(List<RecordDataExistTimeSegment> clipsList) {
@@ -293,18 +288,19 @@ public class FixedTimebarView extends View {
 
     /**
      * 初始化时间刻度相关东西.
-     * @param mostLeftTime 开始时间
+     *
+     * @param mostLeftTime  开始时间
      * @param mostRightTime 结束时间
-     * @param currentTime 当前时间.
+     * @param currentTime   当前时间.
      */
     public void initTimebarLengthAndPosition(long mostLeftTime, long mostRightTime, long currentTime) {
         this.mostLeftTimeInMillisecond = mostLeftTime;
         this.mostRightTimeInMillisecond = mostRightTime;
         this.currentTimeInMillisecond = currentTime;
         WHOLE_TIMEBAR_TOTAL_SECONDS = (mostRightTime - mostLeftTime) / 1000;
-        Log.i(TAG,"initTimebarLengthAndPosition#currentTimeInMillisecond~"+currentTime+
-                "startTime: "+mostLeftTime+
-                "endTime: "+mostRightTime);
+        Log.i(TAG, "initTimebarLengthAndPosition#currentTimeInMillisecond~" + currentTime +
+                "startTime: " + mostLeftTime +
+                "endTime: " + mostRightTime);
         //更新刻度标准
         initTimebarTickCriterionMap();
         //默认选择3.
@@ -322,69 +318,72 @@ public class FixedTimebarView extends View {
     }
 
     private void init(AttributeSet attrs, int defStyleAttr) {
-        //直线
-        path = new Path();
-        TypedArray a = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.TimebarView, defStyleAttr, 0);
-        int n = a.getIndexCount();
 
-        for (int i = 0; i < n; i++) {
-            int attr = a.getIndex(i);
-            if (attr == R.styleable.TimebarView_middleCursorColor) {
-                middleCursorColor = a.getColor(attr, Color.RED);
+        if(!isInEditMode()){
+            TypedArray a = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.TimebarView, defStyleAttr, 0);
+            int n = a.getIndexCount();
 
-            } else if (attr == R.styleable.TimebarView_recordBackgroundColor) {// 默认颜色设置为橘黄色
-                recordBackgroundColor = a.getColor(attr, Color.argb(200, 251, 180, 76));
+            for (int i = 0; i < n; i++) {
+                int attr = a.getIndex(i);
+                if (attr == R.styleable.TimebarView_middleCursorColor) {
+                    middleCursorColor = a.getColor(attr, Color.RED);
 
-            } else if (attr == R.styleable.TimebarView_recordTextColor) {// 默认颜色设置为黑色
-                textColor = a.getColor(attr, Color.BLACK);
+                } else if (attr == R.styleable.TimebarView_recordBackgroundColor) {// 默认颜色设置为橘黄色
+                    recordBackgroundColor = a.getColor(attr, Color.argb(200, 251, 180, 76));
 
-            } else if (attr == R.styleable.TimebarView_timebarColor) {// 默认颜色设置为黑色
-                linesColor = a.getColor(attr, Color.BLACK);
+                } else if (attr == R.styleable.TimebarView_recordTextColor) {// 默认颜色设置为黑色
+                    textColor = a.getColor(attr, Color.BLACK);
+
+                } else if (attr == R.styleable.TimebarView_timebarColor) {// 默认颜色设置为黑色
+                    linesColor = a.getColor(attr, Color.BLACK);
+
+                }
 
             }
-
+            a.recycle();
         }
-        a.recycle();
+
         screenWidth = DeviceUtil.getScreenResolution(getContext())[0];
         screenHeight = DeviceUtil.getScreenResolution(getContext())[1];
         // DO: 2020/4/16 初始化圆形相关数据.
         CIRCLE_RADIUS_NORMAL = DeviceUtil.dip2px(SMALL_CIRCLE_TICK_RADIUS_IN_DP);
         CIRCLE_RADIUS_PRESS = DeviceUtil.dip2px(BIG_CIRCLE_TICK_RADIUS_IN_DP);
-        CIRCLE_WIDTH    =   DeviceUtil.dip2px(BIG_TICK_HALF_WIDTH_IN_DP);
+        CIRCLE_WIDTH = DeviceUtil.dip2px(BIG_TICK_HALF_WIDTH_IN_DP);
 
         currentTimeInMillisecond = System.currentTimeMillis();
-        Log.i(TAG,"init#currentTimeInMillisecond~ ");
+        Log.i(TAG, "init#currentTimeInMillisecond~ ");
+        //向前90s.
         calendar = Calendar.getInstance();
-//        calendar.set(Calendar.HOUR_OF_DAY, 0);
-//        calendar.set(Calendar.MINUTE, 0);
-//        calendar.set(Calendar.SECOND, 0);
-        calendar.add(Calendar.SECOND,-90);
+        calendar.add(Calendar.SECOND, -90);
         mostLeftTimeInMillisecond = calendar.getTimeInMillis();
-
-        //mostLeftTimeInMillisecond = currentTimeInMillisecond - 3 * 3600 * 1000;
+        //向后90s.
         calendar = Calendar.getInstance();
-//        calendar.set(Calendar.HOUR_OF_DAY, 0);
-//        calendar.set(Calendar.MINUTE, 0);
-//        calendar.set(Calendar.SECOND, 0);
-//        calendar.add(Calendar.DAY_OF_MONTH, 1);
-        calendar.add(Calendar.SECOND,90);
+        calendar.add(Calendar.SECOND, 90);
         mostRightTimeInMillisecond = calendar.getTimeInMillis();
-        //mostRightTimeInMillisecond = currentTimeInMillisecond + 3 * 3600 * 1000;
 
         //计算一屏占用的秒数.
         WHOLE_TIMEBAR_TOTAL_SECONDS = (mostRightTimeInMillisecond - mostLeftTimeInMillisecond) / 1000;
 
-//        Log.i(TAG, "width: "+getWidth()+" screenWidth: "+screenWidth+" whole_total_seconds:"+WHOLE_TIMEBAR_TOTAL_SECONDS);
         pixelsPerSecond = (float) (getWidth() - screenWidth) / (float) WHOLE_TIMEBAR_TOTAL_SECONDS;
-        Log.i(TAG,"init# pixelsPerSecond:"+pixelsPerSecond);
+        Log.i(TAG, "init# pixelsPerSecond:" + pixelsPerSecond);
         //初始化刻度表.
         initTimebarTickCriterionMap();
-//        Log.i(TAG,"init()# setCurrentTimebarTickCriterionIndex:"+currentTimebarTickCriterionIndex);
         setCurrentTimebarTickCriterionIndex(currentTimebarTickCriterionIndex);
         //resetToStandardWidth();
         keyTickTextPaint.setAntiAlias(true);
         keyTickTextPaint.setTextSize(KEY_TICK_TEXT_SIZE);
         keyTickTextPaint.setColor(textColor);
+
+        if(isInEditMode()){
+            List<RecordDataExistTimeSegment> recordDataList = new ArrayList<>();
+            //记录当前前后1.5分钟的时间.
+            RecordDataExistTimeSegment currentSegment = new RecordDataExistTimeSegment(
+                    currentTimeInMillisecond - ONE_MINUTE_IN_MS/4,//前15s
+                    currentTimeInMillisecond + ONE_MINUTE_IN_MS/12//后5s
+            );
+            recordDataList.add(currentSegment);
+            setRecordDataExistTimeClipsList(recordDataList);
+        }
     }
 
     public void setMode(int scalMode) {
@@ -501,7 +500,6 @@ public class FixedTimebarView extends View {
      * 重置到标准宽度.3.
      */
     private void resetToStandardWidth() {
-//        Log.i(TAG,"resetToStandardWidth()#setCurrentTimebarTickCriterionIndex(3)");
         setCurrentTimebarTickCriterionIndex(3);
         ViewGroup.LayoutParams params = getLayoutParams();
         params.width = timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getViewLength();
@@ -545,6 +543,7 @@ public class FixedTimebarView extends View {
 
     /**
      * 手动增加一个扩展屏幕的长度 .
+     *
      * @param widthMeasureSpec
      * @return
      */
@@ -555,9 +554,9 @@ public class FixedTimebarView extends View {
         switch (measureMode) {
             case MeasureSpec.AT_MOST:
             case MeasureSpec.EXACTLY:
-                result = measureSize ;//+ screenWidth
+                result = measureSize;//+ screenWidth
                 pixelsPerSecond = measureSize / (float) WHOLE_TIMEBAR_TOTAL_SECONDS;
-                Log.i(TAG," measureWidth#pixelsPerSecond:"+pixelsPerSecond);
+                Log.i(TAG, " measureWidth#pixelsPerSecond:" + pixelsPerSecond);
                 break;
             default:
                 break;
@@ -587,35 +586,35 @@ public class FixedTimebarView extends View {
         mCanvas = canvas;
         //计算一个屏幕单位信息 : px/s .
         pixelsPerSecond = (float) (getWidth()) / (float) WHOLE_TIMEBAR_TOTAL_SECONDS;// - screenWidth
-        Log.i(TAG," onDraw#pixelsPerSecond:"+pixelsPerSecond);
+        Log.i(TAG, " onDraw#pixelsPerSecond:" + pixelsPerSecond);
 
         Calendar cal = Calendar.getInstance();
         zoneOffsetInSeconds = cal.get(Calendar.ZONE_OFFSET) / 1000;//时区差值.
 
-        Log.i(TAG,"onDraw#currentTimebarTickCriterionIndex: "+ currentTimebarTickCriterionIndex
-        +" currentTimeInMillisecond(/1000):"+currentTimeInMillisecond / 1000);
-        Log.i(TAG,"zoneOffsetInSeconds: "+zoneOffsetInSeconds);
+        Log.i(TAG, "onDraw#currentTimebarTickCriterionIndex: " + currentTimebarTickCriterionIndex
+                + " currentTimeInMillisecond(/1000):" + currentTimeInMillisecond / 1000);
+        Log.i(TAG, "zoneOffsetInSeconds: " + zoneOffsetInSeconds);
         //计算左侧开始坐标：  以当前时间点为中轴计算起始位置.
         long forStartUTC = (long) (currentTimeInMillisecond / 1000
                 - screenWidth / pixelsPerSecond / 2 // 减去一半的屏幕.
                 - timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()//减去一格(2秒).
-                                );
+        );
         long forEndUTC = (long) (currentTimeInMillisecond / 1000
                 + screenWidth / pixelsPerSecond / 2
                 + timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()
-                                );
+        );
 
         //开始时间.
         long forStartLocalTimezone = forStartUTC + zoneOffsetInSeconds;
         //结束时间.
         long forEndLocalTimezone = forEndUTC + zoneOffsetInSeconds;
 
-        Log.i(TAG,"forStartUTC:"+forStartLocalTimezone+" ~ "+forEndLocalTimezone);
+        Log.i(TAG, "forStartUTC:" + forStartLocalTimezone + " ~ " + forEndLocalTimezone);
         //轮询设置第一个刻度时间(UTC.).每秒查询.
         for (long i = forStartLocalTimezone; i <= forEndLocalTimezone; i++) {
             if (i % timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond() == 0) {
                 firstTickToSeeInSecondUTC = i - zoneOffsetInSeconds;
-                Log.i(TAG,"found the firstTickToSeeInSecondUTC: "+firstTickToSeeInSecondUTC);
+                Log.i(TAG, "found the firstTickToSeeInSecondUTC: " + firstTickToSeeInSecondUTC);
                 break;
             }
         }
@@ -628,11 +627,13 @@ public class FixedTimebarView extends View {
         drawmiddleCursor(canvas);
         //DO: 2020/4/16 画两侧的时间选择竖线.
         drawLeftRightCursor(canvas);
+        //画 三个时间 开始、当前、结束.
+        drawTimeText(canvas);
 
-        //重新布局.-1/2 screen_width  ----------------- 3/2 screen_width .
-        layout(0,//(int) (0 - (currentTimeInMillisecond - mostLeftTimeInMillisecond) / 1000 * pixelsPerSecond),
+        //重新布局
+        layout(0,
                 getTop(),
-                getWidth(),//getWidth() - (int) ((currentTimeInMillisecond - mostLeftTimeInMillisecond) / 1000 * pixelsPerSecond),
+                getWidth(),
                 getTop() + getHeight());
 
         if (mOnBarMoveListener != null) {
@@ -642,70 +643,85 @@ public class FixedTimebarView extends View {
         }
     }
 
+    /**
+     * 写开始时间，结束时间，当前时间.
+     *
+     * @param canvas
+     */
+    private void drawTimeText(Canvas canvas) {
+        float keytextY = VIEW_HEIGHT/6;
+
+        long startTime = recordDataExistTimeClipsList.get(0).getStartTimeInMillisecond();
+        long endTime = recordDataExistTimeClipsList.get(0).getEndTimeInMillisecond();
+
+        //画时间文字
+        //1. start .
+        float startX = pixelsPerSecond * (startTime - mostLeftTimeInMillisecond) / 1000;// + screenWidth / 2f;
+        String keytext = getTimeStringFromLong(startTime);
+        float keyTextWidth = keyTickTextPaint.measureText(keytext);
+        float keytextX = startX - keyTextWidth / 2;
+        //和中线保持一个字宽.
+        if ((screenWidth / 2 - keytextX) < keyTextWidth * 2) {
+            keytextX = screenWidth / 2 - keyTextWidth * 2;
+        }
+        //到左侧0停止.
+        if (keytextX < 0) keytextX = 0;
+
+        canvas.drawText(keytext, keytextX, keytextY, keyTickTextPaint);
+        //2. end .
+        startX = pixelsPerSecond * (endTime - mostLeftTimeInMillisecond) / 1000;// + screenWidth / 2f;
+        keytext = getTimeStringFromLong(endTime);
+        keyTextWidth = keyTickTextPaint.measureText(keytext);
+        keytextX = startX - keyTextWidth / 2;
+        if ((keytextX - screenWidth / 2) < keyTextWidth) {
+            keytextX = screenWidth / 2 + keyTextWidth;
+        }
+        //到右侧停止.
+        if (screenWidth - keytextX < keyTextWidth) {
+            keytextX = screenWidth - keyTextWidth;
+        }
+        canvas.drawText(keytext, keytextX, keytextY, keyTickTextPaint);
+        //3. currentTime.
+        startX = pixelsPerSecond * (currentTimeInMillisecond - mostLeftTimeInMillisecond) / 1000;// + screenWidth / 2f;
+        keytext = getTimeStringFromLong(currentTimeInMillisecond);
+        keyTextWidth = keyTickTextPaint.measureText(keytext);
+        keytextX = startX - keyTextWidth / 2;
+        canvas.drawText(keytext, keytextX, keytextY, keyTickTextPaint);
+    }
 
     /**
-     * 画刻度.
+     * draw rule numbs..
      * @param canvas
      */
     private void drawTick(Canvas canvas) {
         //计算一个屏幕绘制多少个刻度.
         int totalTickToDrawInOneScreen = (int) (screenWidth / pixelsPerSecond / timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()) + 2;
-        Log.i(TAG,"drawTick#totalTickToDrawInOneScreen~ "+ totalTickToDrawInOneScreen);
-        //时间刻度显示的位置.
-        float keytextY = getHeight() / 2;
-
+        Log.i(TAG, "drawTick#totalTickToDrawInOneScreen~ " + totalTickToDrawInOneScreen);
         //左侧不可见20个刻度，右侧不可见10个刻度.
         for (int i = -20; i <= totalTickToDrawInOneScreen + 10; i++) {
-            //计算第一个刻度（-20*2秒.）的UTC时间.
+            //first rule num time minux -20x.
             long drawTickTimeInSecondUTC = firstTickToSeeInSecondUTC + i * timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond();
-            //第一个刻度的北京时间》
-            long drawTickTimeInSecondLocalTimezone = drawTickTimeInSecondUTC + zoneOffsetInSeconds;
-
+            //first num x .
             float startX = pixelsPerSecond * (drawTickTimeInSecondUTC - mostLeftTimeInMillisecond / 1000);// + screenWidth / 2f;
-            Log.i(TAG,"mostLeftTimeInMillisecond/1000~"+mostLeftTimeInMillisecond / 1000);
-//          float startX = pixelsPerSecond * (drawTickTimeInSecondUTC - mostLeftTimeInMillisecond / 1000) + screenWidth / 2f;
-            //整点重要刻度.
-            if (drawTickTimeInSecondLocalTimezone % timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getKeyTickInSecond() == 0) {//关键刻度
-                //画大刻度
-                timebarPaint.setColor(linesColor);
-                timebarPaint.setAntiAlias(true);
-                timebarPaint.setStyle(Paint.Style.FILL);
+            Log.i(TAG, "mostLeftTimeInMillisecond/1000~" + mostLeftTimeInMillisecond / 1000);
+            //小刻度
+            timebarPaint.setColor(linesColor);
+            timebarPaint.setAntiAlias(true);
+            timebarPaint.setStyle(Paint.Style.FILL);
 
-                Log.i(TAG,"大刻度:"+i+" startX:"+startX);
-                RectF largeTickRect = new RectF(startX - BIG_TICK_HALF_WIDTH / 2, getHeight() - BIG_TICK_HEIGHT, (startX + BIG_TICK_HALF_WIDTH / 2), getHeight());
-                canvas.drawRect(largeTickRect, timebarPaint);
-                RectF largeTickRect1 = new RectF(startX - BIG_TICK_HALF_WIDTH / 2, 0, (startX + BIG_TICK_HALF_WIDTH / 2), BIG_TICK_HEIGHT);
-                canvas.drawRect(largeTickRect1, timebarPaint);
-
-                //画时间文字
-                String keytext = getTimeStringFromLong(drawTickTimeInSecondUTC * 1000);
-                float keyTextWidth = keyTickTextPaint.measureText(keytext);
-                float keytextX = startX - keyTextWidth / 2;
-                canvas.drawText(keytext, keytextX, keytextY, keyTickTextPaint);
-
-            } else if (drawTickTimeInSecondLocalTimezone % timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond() == 0) {
-                //小刻度
-                timebarPaint.setColor(linesColor);
-                timebarPaint.setAntiAlias(true);
-                timebarPaint.setStyle(Paint.Style.FILL);
-
-                Log.i(TAG,"小刻度:"+i+" startX:"+startX);
-                RectF smallTickRect = new RectF(startX - SMALL_TICK_HALF_WIDTH / 2, getHeight() - SMALL_TICK_HEIGHT, (startX + SMALL_TICK_HALF_WIDTH / 2), getHeight());
-                canvas.drawRect(smallTickRect, timebarPaint);
-
-                RectF smallTickRect1 = new RectF(startX - SMALL_TICK_HALF_WIDTH / 2, 0, (startX + SMALL_TICK_HALF_WIDTH / 2), SMALL_TICK_HEIGHT);
-                canvas.drawRect(smallTickRect1, timebarPaint);
-            }
+            Log.i(TAG, "小刻度:" + i + " startX:" + startX);
+            RectF smallTickRect = new RectF(startX - SMALL_TICK_HALF_WIDTH / 2, VIEW_HEIGHT - SMALL_TICK_HEIGHT, (startX + SMALL_TICK_HALF_WIDTH / 2), VIEW_HEIGHT);
+            canvas.drawRect(smallTickRect, timebarPaint);
         }
 
-        //上刻度横线.
-        canvas.drawLine(0, 0, getWidth(), 0, timebarPaint);
-        //下刻度横线.
+
+        //bottom line .
         canvas.drawLine(0, VIEW_HEIGHT, getWidth(), VIEW_HEIGHT, timebarPaint);
     }
 
     /**
      * 视频录制范围绘制.
+     *
      * @param canvas
      */
     private void drawRecord(Canvas canvas) {
@@ -718,7 +734,6 @@ public class FixedTimebarView extends View {
             String startDrawTimeDateString = dateFormat.format(startDrawTimeInSeconds * 1000);
             String zeroTimeString = startDrawTimeDateString + " 00:00:00";
 
-//            long screenLastSecondToSee = (long) (startDrawTimeInSeconds + screenWidth / pixelsPerSecond + 30 * timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()) * 1000L;
             long screenLastSecondToSee = (long) (startDrawTimeInSeconds + 30 * timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()) * 1000L;
 
             Date startDate;
@@ -741,16 +756,16 @@ public class FixedTimebarView extends View {
                     int thisDateFirstClipStartIndex = recordDataExistTimeClipsList.indexOf(startList.get(0));
 
                     long endDrawTimeInSeconds = (long) (startDrawTimeInSeconds
-//                            + screenWidth / pixelsPerSecond
                             + timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond() * 30);
 
                     timebarPaint.setColor(recordBackgroundColor);
                     timebarPaint.setStyle(Paint.Style.FILL);
 
                     for (int i = thisDateFirstClipStartIndex; i < recordDataExistTimeClipsList.size(); i++) {
-                        float leftX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getStartTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000 ;//+ screenWidth / 2f;
-                        float rightX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getEndTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000 ;//+ screenWidth / 2f;
-                        RectF rectF = new RectF(leftX, 0, rightX, getHeight());
+                        float leftX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getStartTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000;//+ screenWidth / 2f;
+                        float rightX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getEndTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000;//+ screenWidth / 2f;
+                        //draw record video scope .
+                        RectF rectF = new RectF(leftX, VIEW_HEIGHT * 1 / 4, rightX, VIEW_HEIGHT);
                         canvas.drawRect(rectF, timebarPaint);
                         if (recordDataExistTimeClipsList.get(i).getEndTimeInMillisecond() >= endDrawTimeInSeconds * 1000) {
                             break;
@@ -764,41 +779,31 @@ public class FixedTimebarView extends View {
     }
 
     /**
-     * 画中间竖线：当前时间点.
+     * draw middle line with current time .
+     *
      * @param canvas
      */
     private void drawmiddleCursor(Canvas canvas) {
         if (middleCursorVisible) {
             timebarPaint.setStyle(Paint.Style.FILL);
             timebarPaint.setColor(middleCursorColor);
-//            int currentCursor = (int) ((currentTimeInMillisecond / 1000L - mostLeftTimeInMillisecond / 1000L) * pixelsPerSecond + screenWidth / 2f - TRIANGLE_LENGTH / 2);
-            int currentCursor = (int) ((currentTimeInMillisecond / 1000L - mostLeftTimeInMillisecond / 1000L) * pixelsPerSecond  - TRIANGLE_LENGTH / 2);
+            timebarPaint.setStrokeWidth(CIRCLE_WIDTH);
+            int currentCursor = (int) ((currentTimeInMillisecond / 1000L - mostLeftTimeInMillisecond / 1000L) * pixelsPerSecond - TRIANGLE_LENGTH / 2);
             lastMmiddlecursor = currentCursor;
-            // Log.d("TIMEBARVIEW", "currentCursor" + currentCursor + " viewWidth:" + getWidth());
-            //path.rMoveTo(currentCursor, 0);
-            // 画三角形
-            path = new Path();
-            path.moveTo(currentCursor, 0);
-            path.lineTo(currentCursor + TRIANGLE_LENGTH, 0);
-            // 求三角形高
-            float length = (float) Math.sqrt(3d) * TRIANGLE_LENGTH / 2;
-            path.lineTo(currentCursor + TRIANGLE_LENGTH / 2, length);
-            path.lineTo(currentCursor, 0);
-            canvas.drawPath(path, timebarPaint);
-            // 画三角形下面的线条
-            canvas.drawLine(currentCursor + TRIANGLE_LENGTH / 2, 0, currentCursor + TRIANGLE_LENGTH / 2, VIEW_HEIGHT, timebarPaint);
+            canvas.drawLine(currentCursor + TRIANGLE_LENGTH / 2, VIEW_HEIGHT * 1 / 4, currentCursor + TRIANGLE_LENGTH / 2, VIEW_HEIGHT, timebarPaint);
         }
     }
 
     /**
      * 画左右两侧的竖线.
+     *
      * @param canvas
      */
     private void drawLeftRightCursor(Canvas canvas) {
         //1.左侧竖线+空心圆
         timebarPaint.setStyle(Paint.Style.FILL);
         timebarPaint.setStrokeWidth(CIRCLE_WIDTH);
-        timebarPaint.setColor(middleCursorColor);
+        timebarPaint.setColor(sideCursorColor);
         //录像从哪个时间点开始，单位是毫秒
         long startDrawTimeInSeconds = firstTickToSeeInSecondUTC + (-20) * timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond();
 
@@ -808,7 +813,7 @@ public class FixedTimebarView extends View {
             String startDrawTimeDateString = dateFormat.format(startDrawTimeInSeconds * 1000);
             String zeroTimeString = startDrawTimeDateString + " 00:00:00";
 
-            long screenLastSecondToSee = (long) (startDrawTimeInSeconds /*+ screenWidth / pixelsPerSecond */+ 30 * timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()) * 1000L;
+            long screenLastSecondToSee = (long) (startDrawTimeInSeconds  + 30 * timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()) * 1000L;
 
             Date startDate;
             try {
@@ -829,7 +834,6 @@ public class FixedTimebarView extends View {
                     int thisDateFirstClipStartIndex = recordDataExistTimeClipsList.indexOf(startList.get(0));
 
                     long endDrawTimeInSeconds = (long) (startDrawTimeInSeconds
-//                            + screenWidth / pixelsPerSecond
                             + timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond() * 30);
 
                     for (int i = thisDateFirstClipStartIndex; i < recordDataExistTimeClipsList.size(); i++) {
@@ -838,22 +842,22 @@ public class FixedTimebarView extends View {
                         //记录坐标，拖动使用.
                         currentLeftTicketX = leftX;
                         currentRightTicketX = rightX;
-                         //1. draw left line.
-                        canvas.drawLine(leftX, 0, leftX, VIEW_HEIGHT, timebarPaint);
+                        //1. draw left line.
+                        canvas.drawLine(leftX, VIEW_HEIGHT * 1 / 4, leftX, VIEW_HEIGHT, timebarPaint);
                         //2. draw right line .
-                        canvas.drawLine(rightX, 0, rightX, VIEW_HEIGHT, timebarPaint);
+                        canvas.drawLine(rightX, VIEW_HEIGHT * 1 / 4, rightX, VIEW_HEIGHT, timebarPaint);
                         //3. draw left circle .
-//                        timebarPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-                        canvas.drawCircle(leftX,VIEW_HEIGHT/2,isLeftPress?CIRCLE_RADIUS_PRESS:CIRCLE_RADIUS_NORMAL,timebarPaint);
+                        int circleY = VIEW_HEIGHT * 5 / 8;
+                        canvas.drawCircle(leftX, circleY, isLeftPress ? CIRCLE_RADIUS_PRESS : CIRCLE_RADIUS_NORMAL, timebarPaint);
                         timebarPaint.setColor(Color.WHITE);
                         //选中放大
-                        canvas.drawCircle(leftX,VIEW_HEIGHT/2,(isLeftPress?CIRCLE_RADIUS_PRESS:CIRCLE_RADIUS_NORMAL)-CIRCLE_WIDTH,timebarPaint);
+                        canvas.drawCircle(leftX, circleY, (isLeftPress ? CIRCLE_RADIUS_PRESS : CIRCLE_RADIUS_NORMAL) - CIRCLE_WIDTH, timebarPaint);
                         //4. draw right circle .
-                        timebarPaint.setColor(middleCursorColor);
-                        canvas.drawCircle(rightX,VIEW_HEIGHT/2,isRightPress?CIRCLE_RADIUS_PRESS:CIRCLE_RADIUS_NORMAL,timebarPaint);
+                        timebarPaint.setColor(sideCursorColor);
+                        canvas.drawCircle(rightX, circleY, isRightPress ? CIRCLE_RADIUS_PRESS : CIRCLE_RADIUS_NORMAL, timebarPaint);
                         timebarPaint.setColor(Color.WHITE);
                         //选中放大圆圈.
-                        canvas.drawCircle(rightX,VIEW_HEIGHT/2,(isRightPress?CIRCLE_RADIUS_PRESS:CIRCLE_RADIUS_NORMAL)- CIRCLE_WIDTH,timebarPaint);
+                        canvas.drawCircle(rightX, circleY, (isRightPress ? CIRCLE_RADIUS_PRESS : CIRCLE_RADIUS_NORMAL) - CIRCLE_WIDTH, timebarPaint);
 
                         if (recordDataExistTimeClipsList.get(i).getEndTimeInMillisecond() >= endDrawTimeInSeconds * 1000) {
                             break;
@@ -874,7 +878,6 @@ public class FixedTimebarView extends View {
      * 当前右侧边界ticket的x坐标.
      */
     float currentRightTicketX;
-
     float lastX, lastY;
     long lastcurrentTimeInMillisecond = 0;
     boolean lastCheckState;
@@ -884,7 +887,6 @@ public class FixedTimebarView extends View {
 
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
-                Log.i("poe","ACTION_DOWN");
                 // 先记录进度条移动状态 如果进度条正在移动 先停止
                 lastCheckState = checkVideo;
                 checkVideo = readyCheck;
@@ -896,11 +898,9 @@ public class FixedTimebarView extends View {
             case MotionEvent.ACTION_POINTER_DOWN:
                 break;
             case MotionEvent.ACTION_MOVE:
-                Log.i("poe","ACTION_MOVE");
                 refreshRecordScope(event);
                 break;
             case MotionEvent.ACTION_CANCEL:
-//                Log.i(TAG,"ACTION_CANCEL ");
                 currentTimeInMillisecond = lastcurrentTimeInMillisecond;
                 checkVideo = lastCheckState;
                 if (mOnBarMoveListener != null) {
@@ -913,11 +913,9 @@ public class FixedTimebarView extends View {
                 invalidate();
                 break;
             case MotionEvent.ACTION_UP:
-//                Log.i(TAG,"ACTION_UP ");
-                Log.i("poe","ACTION_UP");
                 isLeftPress = false;
                 isRightPress = false;
-//                invalidate();
+                invalidate();
                 break;
         }
 
@@ -928,22 +926,20 @@ public class FixedTimebarView extends View {
     /**
      * 刷新ticket的值.
      * 手动选择录制时间,当前向前<90s ,向后<90s .
+     *
      * @param event
      */
     private void refreshRecordScope(MotionEvent event) {
         //左右各有1/2屏幕隐藏.
-        int middleX = getWidth()/2;
+        int middleX = getWidth() / 2;
         int eventX = (int) event.getRawX();
-        Log.i("poe","middx = getWidth/2 : "+middleX + "eventX: "+eventX);
-//        int x = eventX+screenWidth/2;
-
         //5s内不可以调整.
-        if(Math.abs(eventX - middleX) < 5*pixelsPerSecond) return;
+        if (Math.abs(eventX - middleX) < 5 * pixelsPerSecond) return;
 
-        if(eventX < middleX){
+        if (eventX < middleX) {
             isLeftPress = true;
             isRightPress = false;
-        }else if(eventX > middleX){
+        } else if (eventX > middleX) {
             isRightPress = true;
             isLeftPress = false;
         }
@@ -951,38 +947,36 @@ public class FixedTimebarView extends View {
         //过滤5s之内的数据.
         long startTime = recordDataExistTimeClipsList.get(0).getStartTimeInMillisecond();
         long endTime = recordDataExistTimeClipsList.get(0).getEndTimeInMillisecond();
-        Log.i(TAG,"refreshRecordScope# start: "+startTime+ " ~ "+" end: "+endTime);
+        Log.i(TAG, "refreshRecordScope# start: " + startTime + " ~ " + " end: " + endTime);
         //1. 计算x的时间点
-        int timeBarLength = getWidth() ;//- screenWidth;
+        int timeBarLength = getWidth();//- screenWidth;
 
-        long newTime = mostLeftTimeInMillisecond + eventX*WHOLE_TIMEBAR_TOTAL_SECONDS * 1000 / timeBarLength;
-        Log.i(TAG," newTime: "+newTime);
+        long newTime = mostLeftTimeInMillisecond + eventX * WHOLE_TIMEBAR_TOTAL_SECONDS * 1000 / timeBarLength;
+        Log.i(TAG, " newTime: " + newTime);
 
         //2. 如果x不在视频记录范围内，对齐.
         RecordDataExistTimeSegment segment;
-        if(eventX < middleX){
-//            Log.i(TAG,"refreshRecordScope:x() left diff# "+Math.abs(x-currentLeftTicketX) +" currentLeftTicketX:"+currentLeftTicketX);
-            segment =  new RecordDataExistTimeSegment(newTime,endTime);
-        }else{
-//            Log.i(TAG,"refreshRecordScope:x() right diff# "+Math.abs(x-currentRightTicketX)+ " currentRightTicketX:"+currentRightTicketX);
-            segment =  new RecordDataExistTimeSegment(startTime,newTime);
+        if (eventX < middleX) {
+            segment = new RecordDataExistTimeSegment(newTime, endTime);
+        } else {
+            segment = new RecordDataExistTimeSegment(startTime, newTime);
         }
         recordDataExistTimeClipsList.clear();
         recordDataExistTimeClipsList.add(segment);
         arrangeRecordDataExistTimeClipsIntoMap(recordDataExistTimeClipsList);
 
         if (mOnBarMoveListener != null) {
-             startTime = recordDataExistTimeClipsList.get(0).getStartTimeInMillisecond();
-             endTime = recordDataExistTimeClipsList.get(0).getEndTimeInMillisecond();
+            startTime = recordDataExistTimeClipsList.get(0).getStartTimeInMillisecond();
+            endTime = recordDataExistTimeClipsList.get(0).getEndTimeInMillisecond();
             mOnBarMoveListener.onBarMove(startTime, endTime, currentTimeInMillisecond);
         }
-//        invalidate();
-        // TODO: 2020/4/20 局部刷新即可.
-        if(null != mCanvas){
+
+        // DO: 2020/4/20 局部刷新即可.
+        if (null != mCanvas) {
             drawRecord(mCanvas);
             drawLeftRightCursor(mCanvas);
+            drawTimeText(mCanvas);
         }
-
     }
 
     /**
@@ -1004,17 +998,17 @@ public class FixedTimebarView extends View {
     private boolean readyCheck = false;
 
     /*
-    *
-    * 设置是否检查有录像
-    *
-    * */
+     *
+     * 设置是否检查有录像
+     *
+     * */
     public void checkVideo(boolean check) {
         readyCheck = check;
     }
 
     /*
-    * 返回下一个录像开始点
-    * */
+     * 返回下一个录像开始点
+     * */
     private long locationVideo() {
         if (recordDataExistTimeClipsList == null)
             return -1;
