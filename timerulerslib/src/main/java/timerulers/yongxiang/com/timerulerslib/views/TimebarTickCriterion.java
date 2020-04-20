@@ -14,7 +14,7 @@ public class TimebarTickCriterion {
      */
     private int totalSecondsInOneScreen;
     /**
-     * 关键刻度 单位:秒.
+     * 关键刻度 单位:秒.//每个小刻度多少秒.
      */
     private int keyTickInSecond;
     /**
@@ -44,6 +44,10 @@ public class TimebarTickCriterion {
         return keyTickInSecond;
     }
 
+    /**
+     *  //每个小刻度多少秒.
+     * @param keyTickInSecond
+     */
     public void setKeyTickInSecond(int keyTickInSecond) {
         this.keyTickInSecond = keyTickInSecond;
     }
