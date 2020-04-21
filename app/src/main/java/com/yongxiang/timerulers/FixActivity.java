@@ -9,6 +9,7 @@ import android.widget.Toast;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import timerulers.yongxiang.com.timerulerslib.views.FixedTimebarView;
 import timerulers.yongxiang.com.timerulerslib.views.RecordDataExistTimeSegment;
@@ -92,14 +93,29 @@ public class FixActivity extends AppCompatActivity implements View.OnClickListen
                     Toast.makeText(FixActivity.this, "当前时刻没有录像", Toast.LENGTH_SHORT).show();
                 }
                 currentTimeTextView.setText(zeroTimeFormat.format(currentTime));
+
+                mPushStartTime = zeroTimeFormat.format(new Date(screenLeftTime));
+                mPushEndTime = zeroTimeFormat.format(new Date(screenRightTime));
             }
 
             @Override
             public void OnBarMoveFinish(long screenLeftTime, long screenRightTime, long currentTime) {
                 currentTimeTextView.setText(zeroTimeFormat.format(currentTime));
+                // TODO: 2020/4/21 自动播放结束.
+
             }
         });
+
+
+        //测试自动滚动.
+        mTimebarView.openMove();
+        mTimebarView.checkVideo(true);
     }
+
+    /**
+     * 选中的开始结束时间 .
+     */
+    private String mPushStartTime ,mPushEndTime;
 
     @Override
     protected void onResume() {
@@ -126,7 +142,9 @@ public class FixActivity extends AppCompatActivity implements View.OnClickListen
                 mTimebarView.setMode(TimebarView.STYLE_STEP_MINUTE);
                 break;
             case R.id.minute3://三分钟
-                mTimebarView.setMode(TimebarView.STYLE_STEP_MINUTE);
+//                mTimebarView.setMode(TimebarView.STYLE_STEP_MINUTE);
+                // TODO: 2020/4/21 弹出选中的开始~结束时间 .
+                Toast.makeText(this,"pushStartTime: "+mPushStartTime+"~pushEndTime: "+mPushEndTime,Toast.LENGTH_LONG).show();
                 break;
             default:
                 break;

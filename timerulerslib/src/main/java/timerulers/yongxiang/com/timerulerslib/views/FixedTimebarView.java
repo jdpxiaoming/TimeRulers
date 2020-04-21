@@ -7,6 +7,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -23,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 
 import timerulers.yongxiang.com.timerulerslib.R;
+import timerulers.yongxiang.com.timerulerslib.views.DeviceUtil;
+import timerulers.yongxiang.com.timerulerslib.views.RecordDataExistTimeSegment;
+import timerulers.yongxiang.com.timerulerslib.views.TimebarTickCriterion;
 
 /**
  * 固定录播长度的时间选择视图
@@ -179,11 +184,9 @@ public class FixedTimebarView extends View {
      */
     private long mostRightTimeInMillisecond;
 
-//    private long screenLeftTimeInMillisecond;
-//
-//    private long screenRightTimeInMillisecond;
-
-
+    /**
+     * 一天的时间.
+     */
     public final static int SECONDS_PER_DAY = 24 * 60 * 60;
 
     /**
@@ -211,10 +214,45 @@ public class FixedTimebarView extends View {
 
     private static final int MOVEING = 0x001;
     private static final int ACTION_UP = MOVEING + 1;
+
     /**
-     * 缓存画布.
+     * 处理自动滚动当前seek的功能.
      */
-    private Canvas mCanvas;
+    Handler handler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+
+            switch (msg.what) {
+                case MOVEING:
+                    openMove();
+                    break;
+                case ACTION_UP:
+                    if (checkVideo) {
+                        if (!checkHasVideo()) {
+                            Log.d("ACTION_UP", "NO VIDEO currentTimeInMillisecond:" + currentTimeInMillisecond + " lastcurrentTimeInMillisecond:" + lastcurrentTimeInMillisecond);
+                            currentTimeInMillisecond = lastcurrentTimeInMillisecond;
+                            invalidate();
+                            checkVideo = lastCheckState;
+                            /*if (mOnBarMoveListener != null) {
+                                mOnBarMoveListener.onBarMove(getScreenLeftTimeInMillisecond(), getScreenRightTimeInMillisecond(), -1);
+                            }*/
+                        } else {
+                            /*if (mOnBarMoveListener != null) {
+                                mOnBarMoveListener.OnBarMoveFinish(getScreenLeftTimeInMillisecond(), getScreenRightTimeInMillisecond(), currentTimeInMillisecond);
+                            }*/
+                        }
+                    } else {
+                        /*if (mOnBarMoveListener != null) {
+                            mOnBarMoveListener.OnBarMoveFinish(getScreenLeftTimeInMillisecond(), getScreenRightTimeInMillisecond(), currentTimeInMillisecond);
+                        }*/
+                    }
+                    break;
+
+            }
+
+            return false;
+        }
+    });
 
     public FixedTimebarView(Context context) {
         super(context);
@@ -480,7 +518,7 @@ public class FixedTimebarView extends View {
         //每个小刻度多少秒.
         t3.setKeyTickInSecond(1 * 60);
         //每格子代表多少秒.
-        t3.setMinTickInSecond(18);
+        t3.setMinTickInSecond(6);
         t3.setDataPattern("HH:mm:ss");
         t3.setViewLength((int) ((float) screenWidth * WHOLE_TIMEBAR_TOTAL_SECONDS / (float) t3.getTotalSecondsInOneScreen()));
         timebarTickCriterionMap.put(3, t3);
@@ -575,7 +613,7 @@ public class FixedTimebarView extends View {
         invalidate();
     }
 
-    int lastMmiddlecursor = 0;
+    float lastMmiddlecursor = 0;
     long firstTickToSeeInSecondUTC = -1;
     int zoneOffsetInSeconds;
 
@@ -583,7 +621,6 @@ public class FixedTimebarView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         Log.d(TAG, "onDraw");
-        mCanvas = canvas;
         //计算一个屏幕单位信息 : px/s .
         pixelsPerSecond = (float) (getWidth()) / (float) WHOLE_TIMEBAR_TOTAL_SECONDS;// - screenWidth
         Log.i(TAG, " onDraw#pixelsPerSecond:" + pixelsPerSecond);
@@ -591,9 +628,9 @@ public class FixedTimebarView extends View {
         Calendar cal = Calendar.getInstance();
         zoneOffsetInSeconds = cal.get(Calendar.ZONE_OFFSET) / 1000;//时区差值.
 
-        Log.i(TAG, "onDraw#currentTimebarTickCriterionIndex: " + currentTimebarTickCriterionIndex
+        /*Log.i(TAG, "onDraw#currentTimebarTickCriterionIndex: " + currentTimebarTickCriterionIndex
                 + " currentTimeInMillisecond(/1000):" + currentTimeInMillisecond / 1000);
-        Log.i(TAG, "zoneOffsetInSeconds: " + zoneOffsetInSeconds);
+        Log.i(TAG, "zoneOffsetInSeconds: " + zoneOffsetInSeconds);*/
         //计算左侧开始坐标：  以当前时间点为中轴计算起始位置.
         long forStartUTC = (long) (currentTimeInMillisecond / 1000
                 - screenWidth / pixelsPerSecond / 2 // 减去一半的屏幕.
@@ -609,12 +646,12 @@ public class FixedTimebarView extends View {
         //结束时间.
         long forEndLocalTimezone = forEndUTC + zoneOffsetInSeconds;
 
-        Log.i(TAG, "forStartUTC:" + forStartLocalTimezone + " ~ " + forEndLocalTimezone);
+//        Log.i(TAG, "forStartUTC:" + forStartLocalTimezone + " ~ " + forEndLocalTimezone);
         //轮询设置第一个刻度时间(UTC.).每秒查询.
         for (long i = forStartLocalTimezone; i <= forEndLocalTimezone; i++) {
             if (i % timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond() == 0) {
                 firstTickToSeeInSecondUTC = i - zoneOffsetInSeconds;
-                Log.i(TAG, "found the firstTickToSeeInSecondUTC: " + firstTickToSeeInSecondUTC);
+//                Log.i(TAG, "found the firstTickToSeeInSecondUTC: " + firstTickToSeeInSecondUTC);
                 break;
             }
         }
@@ -682,7 +719,7 @@ public class FixedTimebarView extends View {
         }
         canvas.drawText(keytext, keytextX, keytextY, keyTickTextPaint);
         //3. currentTime.
-        startX = pixelsPerSecond * (currentTimeInMillisecond - mostLeftTimeInMillisecond) / 1000;// + screenWidth / 2f;
+        startX = screenWidth / 2f;//pixelsPerSecond * (currentTimeInMillisecond - mostLeftTimeInMillisecond) / 1000;// + ;
         keytext = getTimeStringFromLong(currentTimeInMillisecond);
         keyTextWidth = keyTickTextPaint.measureText(keytext);
         keytextX = startX - keyTextWidth / 2;
@@ -696,24 +733,23 @@ public class FixedTimebarView extends View {
     private void drawTick(Canvas canvas) {
         //计算一个屏幕绘制多少个刻度.
         int totalTickToDrawInOneScreen = (int) (screenWidth / pixelsPerSecond / timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond()) + 2;
-        Log.i(TAG, "drawTick#totalTickToDrawInOneScreen~ " + totalTickToDrawInOneScreen);
+//        Log.i(TAG, "drawTick#totalTickToDrawInOneScreen~ " + totalTickToDrawInOneScreen);
         //左侧不可见20个刻度，右侧不可见10个刻度.
         for (int i = -20; i <= totalTickToDrawInOneScreen + 10; i++) {
             //first rule num time minux -20x.
             long drawTickTimeInSecondUTC = firstTickToSeeInSecondUTC + i * timebarTickCriterionMap.get(currentTimebarTickCriterionIndex).getMinTickInSecond();
             //first num x .
             float startX = pixelsPerSecond * (drawTickTimeInSecondUTC - mostLeftTimeInMillisecond / 1000);// + screenWidth / 2f;
-            Log.i(TAG, "mostLeftTimeInMillisecond/1000~" + mostLeftTimeInMillisecond / 1000);
+//            Log.i(TAG, "mostLeftTimeInMillisecond/1000~" + mostLeftTimeInMillisecond / 1000);
             //小刻度
             timebarPaint.setColor(linesColor);
             timebarPaint.setAntiAlias(true);
             timebarPaint.setStyle(Paint.Style.FILL);
 
-            Log.i(TAG, "小刻度:" + i + " startX:" + startX);
+//            Log.i(TAG, "小刻度:" + i + " startX:" + startX);
             RectF smallTickRect = new RectF(startX - SMALL_TICK_HALF_WIDTH / 2, VIEW_HEIGHT - SMALL_TICK_HEIGHT, (startX + SMALL_TICK_HALF_WIDTH / 2), VIEW_HEIGHT);
             canvas.drawRect(smallTickRect, timebarPaint);
         }
-
 
         //bottom line .
         canvas.drawLine(0, VIEW_HEIGHT, getWidth(), VIEW_HEIGHT, timebarPaint);
@@ -762,8 +798,8 @@ public class FixedTimebarView extends View {
                     timebarPaint.setStyle(Paint.Style.FILL);
 
                     for (int i = thisDateFirstClipStartIndex; i < recordDataExistTimeClipsList.size(); i++) {
-                        float leftX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getStartTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000;//+ screenWidth / 2f;
-                        float rightX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getEndTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000;//+ screenWidth / 2f;
+                        float leftX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getStartTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000;
+                        float rightX = pixelsPerSecond * (recordDataExistTimeClipsList.get(i).getEndTimeInMillisecond() - mostLeftTimeInMillisecond) / 1000;
                         //draw record video scope .
                         RectF rectF = new RectF(leftX, VIEW_HEIGHT * 1 / 4, rightX, VIEW_HEIGHT);
                         canvas.drawRect(rectF, timebarPaint);
@@ -788,9 +824,9 @@ public class FixedTimebarView extends View {
             timebarPaint.setStyle(Paint.Style.FILL);
             timebarPaint.setColor(middleCursorColor);
             timebarPaint.setStrokeWidth(CIRCLE_WIDTH);
-            int currentCursor = (int) ((currentTimeInMillisecond / 1000L - mostLeftTimeInMillisecond / 1000L) * pixelsPerSecond - TRIANGLE_LENGTH / 2);
+            float currentCursor = pixelsPerSecond*(currentTimeInMillisecond  - mostLeftTimeInMillisecond)/1000;
             lastMmiddlecursor = currentCursor;
-            canvas.drawLine(currentCursor + TRIANGLE_LENGTH / 2, VIEW_HEIGHT * 1 / 4, currentCursor + TRIANGLE_LENGTH / 2, VIEW_HEIGHT, timebarPaint);
+            canvas.drawLine(currentCursor, VIEW_HEIGHT * 1 / 4, currentCursor, VIEW_HEIGHT, timebarPaint);
         }
     }
 
@@ -887,9 +923,11 @@ public class FixedTimebarView extends View {
 
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_DOWN:
+                if (handler.hasMessages(ACTION_UP))
+                    handler.removeMessages(ACTION_UP);
                 // 先记录进度条移动状态 如果进度条正在移动 先停止
                 lastCheckState = checkVideo;
-                checkVideo = readyCheck;
+                closeMove();
                 lastcurrentTimeInMillisecond = currentTimeInMillisecond;
                 lastX = event.getRawX();
                 lastY = event.getRawY();
@@ -915,6 +953,9 @@ public class FixedTimebarView extends View {
             case MotionEvent.ACTION_UP:
                 isLeftPress = false;
                 isRightPress = false;
+                if (handler.hasMessages(ACTION_UP))
+                    handler.removeMessages(ACTION_UP);
+                handler.sendEmptyMessageDelayed(ACTION_UP, 1100);
                 invalidate();
                 break;
         }
@@ -971,12 +1012,13 @@ public class FixedTimebarView extends View {
             mOnBarMoveListener.onBarMove(startTime, endTime, currentTimeInMillisecond);
         }
 
-        // DO: 2020/4/20 局部刷新即可.
-        if (null != mCanvas) {
-            drawRecord(mCanvas);
+        // DO: 2020/4/20 局部刷新即可. 此处和TextureView公用视频刷新和此处局部刷新会造成重影，禁用.
+        /* if (null != mCanvas) {
+           drawRecord(mCanvas);
             drawLeftRightCursor(mCanvas);
             drawTimeText(mCanvas);
-        }
+        }*/
+        postInvalidate();
     }
 
     /**
@@ -993,9 +1035,81 @@ public class FixedTimebarView extends View {
         mOnBarMoveListener = onBarMoveListener;
     }
 
+
+    // 设置进度条是否自动滚动
+    private boolean moveFlag = false;
+    // 进度条滚动状态
+    private boolean moveIng = false;
     // 是否检查录像标志位
     private boolean checkVideo = false;
-    private boolean readyCheck = false;
+
+    private MoveThread moThread;
+
+    private class MoveThread extends Thread {
+        @Override
+        public void run() {
+            Log.d("MOVETHREAD", "thread is start");
+            moveIng = true;
+            while (moveFlag) {
+                try {
+                    Thread.sleep(1000);
+                    Log.d("MOVETHREAD", "thread is running");
+                    currentTimeInMillisecond += 1000;
+                    if (checkVideo) {
+                        if (!checkHasVideo()) {
+                            long nextStartTime = locationVideo();
+                            if (nextStartTime != -1) {
+                                currentTimeInMillisecond = nextStartTime;
+                            } else {
+                                currentTimeInMillisecond -= 1000;
+                                moveFlag = false;
+                                moveIng = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    postInvalidate();
+                    /*post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mOnBarMoveListener != null) {
+                                mOnBarMoveListener.onBarMove(getScreenLeftTimeInMillisecond(), getScreenRightTimeInMillisecond(), currentTimeInMillisecond);
+                            }
+                        }
+                    });*/
+                } catch (InterruptedException e) {
+                    moveIng = false;
+                    e.printStackTrace();
+                }
+            }
+            moveIng = false;
+            Log.d("MOVETHREAD", "thread is stop");
+        }
+    }
+
+    public void openMove() {
+        if (!moveIng) {
+            moveFlag = true;
+            moThread = null;
+            moThread = new MoveThread();
+            moThread.start();
+        }
+    }
+
+    public void closeMove() {
+        moveFlag = false;
+        moThread = null;
+    }
+
+    public boolean isMoveing() {
+        return moveFlag;
+    }
+
+    public void setMoveFlag(boolean moveFlag) {
+        this.moveFlag = moveFlag;
+    }
+
 
     /*
      *
@@ -1003,7 +1117,7 @@ public class FixedTimebarView extends View {
      *
      * */
     public void checkVideo(boolean check) {
-        readyCheck = check;
+        checkVideo = check;
     }
 
     /*
@@ -1048,7 +1162,6 @@ public class FixedTimebarView extends View {
 //        mOnBarScaledListener = null;
         timebarPaint = null;
 //        scaleGestureDetector = null;
-        mCanvas = null;
     }
 }
 
